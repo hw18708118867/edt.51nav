@@ -15,13 +15,13 @@ Copy `.env.example` to `.env` for local testing.
 
 - `PUBLIC_GA4_MEASUREMENT_ID`: optional GA4 measurement ID
 - `PUBLIC_GOOGLE_SITE_VERIFICATION`: optional Google Search Console verification token
-- `PUBLIC_ENABLE_ADSENSE`: set to `true` to render AdSense units
-- `PUBLIC_ADSENSE_CLIENT_ID`: your AdSense client ID, for example `ca-pub-...`
-- `PUBLIC_ADSENSE_TOOL_SIDEBAR_SLOT`: tool page sidebar slot ID
+- `PUBLIC_ENABLE_ADSENSE`: optional switch for AdSense
+- `PUBLIC_ADSENSE_CLIENT_ID`: optional AdSense client ID
+- `PUBLIC_ADSENSE_TOOL_SIDEBAR_SLOT`: optional tool page sidebar slot ID
 
 ## GitHub Pages deployment
 
-The workflow reads repository variables from GitHub Actions `Variables`:
+The workflow can read repository variables from GitHub Actions `Variables`:
 
 - `PUBLIC_GA4_MEASUREMENT_ID`
 - `PUBLIC_GOOGLE_SITE_VERIFICATION`
@@ -32,12 +32,11 @@ The workflow reads repository variables from GitHub Actions `Variables`:
 Also update:
 
 - `public/CNAME`
-- `public/ads.txt`
 
 ## Launch checklist
 
 1. Set the custom domain to `devtools.51nav.com`
-2. Add the Google Search Console verification token
-3. Add the GA4 measurement ID
-4. Replace `public/ads.txt` with the real publisher entry
-5. Enable AdSense only after approval and slot creation
+2. Confirm DNS for `devtools.51nav.com`
+3. Add the Google Search Console verification token when you are ready
+4. Add the GA4 measurement ID when you are ready
+5. Add AdSense only after approval and slot creation
