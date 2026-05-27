@@ -1,0 +1,19 @@
+---
+import { secondaryNav, siteConfig } from "@/config/site";
+---
+
+<footer class="border-t border-slate-200/70 bg-white/70">
+  <div class="shell flex flex-col gap-6 py-10 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+    <div>
+      <div class="font-semibold text-slate-800">{siteConfig.name}</div>
+      <div>Small tools for the jobs developers repeat all week.</div>
+    </div>
+    <div class="flex flex-wrap gap-4">
+      <a href="/tools/" class="hover:text-slate-900">All Tools</a>
+      <a href="/blog/" class="hover:text-slate-900">Blog</a>
+      <a href="/json/" class="hover:text-slate-900">JSON</a>
+      <a href="/api/" class="hover:text-slate-900">API</a>
+      {secondaryNav.map((item) => <a href={item.href} class="hover:text-slate-900">{item.label}</a>)}
+    </div>
+  </div>
+</footer>

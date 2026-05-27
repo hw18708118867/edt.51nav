@@ -1,0 +1,117 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="JSON Compare"
+  description="Compare two JSON payloads and inspect missing keys, changed values, and structural drift."
+  controls={["Compare", "Clear", "Sample"]}
+  note="Arrays are compared by position. If your API treats array order as non-semantic, normalize the data first."
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-2">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Left JSON</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Baseline</span>
+      </div>
+      <textarea class="tool-textarea min-h-[22rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-left-input data-code-language="json" placeholder='{"status":"ok"}'></textarea>
+    </label>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Right JSON</span>
+        <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Waiting</span>
+      </div>
+      <textarea class="tool-textarea min-h-[22rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-right-input data-code-language="json" placeholder='{"status":"changed"}'></textarea>
+    </label>
+  </div>
+  <div class="mt-6">
+    <div class="mb-3 flex items-center justify-between gap-4">
+      <span class="text-sm font-semibold text-slate-900">Diff output</span>
+      <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Change list</span>
+    </div>
+    <textarea class="tool-textarea min-h-[18rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="text" readonly placeholder="Differences will appear here"></textarea>
+    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+      Review changed paths first. That usually reveals contract drift faster than inspecting the whole payload manually.
+    </div>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const left = root.querySelector("[data-left-input]");
+    const right = root.querySelector("[data-right-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(left instanceof HTMLTextAreaElement) || !(right instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const sampleLeft = `{"name":"service-a","retries":2,"headers":{"accept":"application/json"},"tags":["prod","api"]}`;
+    const sampleRight = `{"name":"service-a","retries":3,"headers":{"accept":"application/json","x-env":"staging"},"tags":["staging","api"]}`;
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    const diff = (leftValue, rightValue, path = "$") => {
+      const rows = [];
+      if (typeof leftValue !== typeof rightValue || Array.isArray(leftValue) !== Array.isArray(rightValue)) {
+        rows.push(`${path}: type changed from ${Array.isArray(leftValue) ? "array" : typeof leftValue} to ${Array.isArray(rightValue) ? "array" : typeof rightValue}`);
+        return rows;
+      }
+      if (leftValue === null || rightValue === null || typeof leftValue !== "object") {
+        if (leftValue !== rightValue) rows.push(`${path}: ${JSON.stringify(leftValue)} -> ${JSON.stringify(rightValue)}`);
+        return rows;
+      }
+      if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
+        const max = Math.max(leftValue.length, rightValue.length);
+        for (let index = 0; index < max; index += 1) {
+          if (index >= leftValue.length) rows.push(`${path}[${index}]: added ${JSON.stringify(rightValue[index])}`);
+          else if (index >= rightValue.length) rows.push(`${path}[${index}]: removed ${JSON.stringify(leftValue[index])}`);
+          else rows.push(...diff(leftValue[index], rightValue[index], `${path}[${index}]`));
+        }
+        return rows;
+      }
+      const keys = new Set([...Object.keys(leftValue), ...Object.keys(rightValue)]);
+      for (const key of keys) {
+        if (!(key in leftValue)) rows.push(`${path}.${key}: added ${JSON.stringify(rightValue[key])}`);
+        else if (!(key in rightValue)) rows.push(`${path}.${key}: removed ${JSON.stringify(leftValue[key])}`);
+        else rows.push(...diff(leftValue[key], rightValue[key], `${path}.${key}`));
+      }
+      return rows;
+    };
+
+    root.addEventListener("click", (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        left.value = sampleLeft;
+        right.value = sampleRight;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        left.value = "";
+        right.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Compare") {
+        if (!left.value.trim() || !right.value.trim()) {
+          output.value = "Enter JSON in both inputs before comparing.";
+          setStatus("Input required", false);
+          return;
+        }
+        try {
+          const leftJson = JSON.parse(left.value);
+          const rightJson = JSON.parse(right.value);
+          const rows = diff(leftJson, rightJson);
+          output.value = rows.length ? rows.join("\n") : "No differences found.";
+          setStatus(rows.length ? `${rows.length} differences found` : "No differences found");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Comparison failed";
+          setStatus("Invalid JSON", false);
+        }
+      }
+    });
+  })();
+</script>

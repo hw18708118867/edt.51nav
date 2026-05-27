@@ -1,0 +1,23 @@
+<button type="button" class="btn-secondary" data-copy-button>
+  Copy output
+</button>
+
+<script is:inline>
+  document.addEventListener("click", async (event) => {
+    const button = event.target instanceof Element ? event.target.closest("[data-copy-button]") : null;
+    if (!(button instanceof HTMLButtonElement)) return;
+    const root = button.closest("[data-tool-root]");
+    const output = root?.querySelector("[data-tool-output]");
+    if (!(output instanceof HTMLTextAreaElement || output instanceof HTMLInputElement)) return;
+    try {
+      await navigator.clipboard.writeText(output.value);
+      const original = button.textContent;
+      button.textContent = "Copied";
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1200);
+    } catch {
+      button.textContent = "Copy failed";
+    }
+  });
+</script>

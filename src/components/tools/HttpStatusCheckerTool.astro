@@ -1,0 +1,134 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="HTTP Status Checker"
+  description="Send a lightweight browser request to a public URL and inspect status, headers, redirect target, or CORS limitations."
+  controls={["Check", "Clear", "Sample"]}
+  note="Requests run from the browser. Some URLs block cross-origin access, so a curl fallback is included when that happens."
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">URL</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Public endpoint</span>
+      </div>
+      <input class="tool-input" data-tool-input data-code-language="url" placeholder="https://example.com/api/health" />
+    </label>
+    <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
+      Best for public endpoints. If a site blocks browser requests, use the generated curl command as a fallback.
+    </div>
+  </div>
+  <div class="mt-6 grid gap-6 xl:grid-cols-2">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Status result</span>
+        <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Waiting</span>
+      </div>
+      <textarea class="tool-textarea min-h-[18rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="text" readonly placeholder="Status details will appear here"></textarea>
+    </label>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">curl fallback</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Fallback</span>
+      </div>
+      <textarea class="tool-textarea min-h-[18rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-curl-output data-code-language="shell" readonly placeholder="A curl command will appear here"></textarea>
+    </label>
+    <div class="xl:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+      Browser checks are ideal for public endpoints. If CORS blocks the response, the curl command gives you a direct terminal fallback.
+    </div>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const curlOutput = root.querySelector("[data-curl-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLInputElement) || !(output instanceof HTMLTextAreaElement) || !(curlOutput instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const sample = "https://httpbin.org/status/200";
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`;
+    };
+
+    const buildCurl = (url) => `curl -I ${JSON.stringify(url)}`;
+
+    const parsePublicUrl = (value) => {
+      let parsed;
+      try {
+        parsed = new URL(value);
+      } catch {
+        throw new Error("Enter a valid absolute URL, including http:// or https://");
+      }
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error("Only http:// and https:// URLs are supported.");
+      }
+      return parsed;
+    };
+
+    root.addEventListener("click", async (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sample;
+        output.value = "";
+        curlOutput.value = buildCurl(sample);
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        output.value = "";
+        curlOutput.value = "";
+        setStatus("Ready");
+      } else if (action === "Check") {
+        const url = input.value.trim();
+        curlOutput.value = buildCurl(url);
+        if (!url) {
+          output.value = "Enter a valid URL first.";
+          setStatus("Missing URL", false);
+          return;
+        }
+        try {
+          const parsedUrl = parsePublicUrl(url);
+          const controller = new AbortController();
+          const timeout = window.setTimeout(() => controller.abort(), 10000);
+          const response = await fetch(parsedUrl.toString(), { method: "GET", redirect: "follow", signal: controller.signal });
+          window.clearTimeout(timeout);
+          const headers = Array.from(response.headers.entries())
+            .slice(0, 12)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n");
+          output.value = [
+            `Final URL: ${response.url}`,
+            `Status: ${response.status} ${response.statusText}`,
+            `OK: ${response.ok}`,
+            "",
+            "Headers:",
+            headers || "No readable headers exposed by the browser."
+          ].join("\n");
+          setStatus(`${response.status} ${response.statusText}`, response.ok);
+        } catch (error) {
+          output.value = [
+            error instanceof DOMException && error.name === "AbortError" ? "Browser request timed out." : "Browser request failed.",
+            "",
+            error instanceof Error ? error.message : "Unknown error",
+            "",
+            "Possible reasons:",
+            "- The target blocks CORS",
+            "- The endpoint requires auth",
+            "- DNS, TLS, or network issues occurred",
+            "",
+            "Use the curl command on the right to verify outside the browser."
+          ].join("\n");
+          setStatus(error instanceof DOMException && error.name === "AbortError" ? "Request timed out" : "Request failed", false);
+        }
+      }
+    });
+  })();
+</script>

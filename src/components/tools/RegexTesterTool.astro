@@ -1,0 +1,207 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="Regex Tester"
+  description="Test JavaScript regular expressions with flags, live matching, and a readable result list."
+  controls={["Test", "Clear", "Sample"]}
+  note="This uses the browser's JavaScript regex engine. Patterns may behave differently in PCRE, Python, or Ruby."
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_220px]">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Pattern</span>
+        <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+      </div>
+      <input class="tool-input font-mono rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-regex-pattern data-code-language="regex" placeholder="\\b[A-Z]{2,}\\b" />
+      <div class="mt-4">
+        <div class="mb-3 text-sm font-semibold text-slate-900">Common regex presets</div>
+        <select class="tool-input rounded-[1.5rem] bg-white" data-regex-preset>
+          <option value="">Choose a common pattern</option>
+          <option value="email">Email address</option>
+          <option value="url">HTTP / HTTPS URL</option>
+          <option value="ipv4">IPv4 address</option>
+          <option value="uuid">UUID</option>
+          <option value="semver">Semantic version</option>
+          <option value="iso-date">ISO date</option>
+          <option value="time-24h">24-hour time</option>
+          <option value="hex-color">Hex color</option>
+          <option value="slug">URL slug</option>
+          <option value="filename-ext">Filename with extension</option>
+          <option value="jwt">JWT token</option>
+          <option value="bearer">Bearer token header</option>
+          <option value="api-path">REST API path</option>
+        </select>
+      </div>
+    </label>
+    <label class="block">
+      <div class="mb-3 text-sm font-semibold text-slate-900">Flags</div>
+      <input class="tool-input font-mono rounded-[1.5rem] bg-white" data-regex-flags data-code-language="text" placeholder="gm" />
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+        Start with one flag at a time. It is easier to diagnose behavior changes that way.
+      </div>
+    </label>
+  </div>
+  <div class="mt-6 grid gap-6 xl:grid-cols-2">
+    <label class="block">
+      <div class="mb-3 text-sm font-semibold text-slate-900">Test text</div>
+      <textarea class="tool-textarea min-h-[22rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-regex-input data-code-language="text" placeholder="Paste sample text here"></textarea>
+    </label>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Matches</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Match list</span>
+      </div>
+      <textarea class="tool-textarea min-h-[22rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="text" readonly placeholder="Match results will appear here"></textarea>
+    </label>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const patternInput = root.querySelector("[data-regex-pattern]");
+    const flagsInput = root.querySelector("[data-regex-flags]");
+    const presetSelect = root.querySelector("[data-regex-preset]");
+    const textInput = root.querySelector("[data-regex-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(patternInput instanceof HTMLInputElement) || !(flagsInput instanceof HTMLInputElement) || !(presetSelect instanceof HTMLSelectElement) || !(textInput instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const samplePattern = "\\b(?:GET|POST|PUT|DELETE)\\b";
+    const sampleFlags = "g";
+    const sampleText = "GET /users\nPOST /sessions\nPATCH /users/1\nDELETE /users/1";
+    const presets = {
+      email: {
+        pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+        flags: "g",
+        text: "alice@example.com\nops@devtools.51nav.com\ninvalid@localhost"
+      },
+      url: {
+        pattern: "https?:\\/\\/[\\w.-]+(?:\\:[0-9]+)?(?:\\/[\\w\\-./?%&=+#]*)?",
+        flags: "g",
+        text: "https://devtools.51nav.com/json/formatter/\nhttp://localhost:3000/api/health\nftp://example.com"
+      },
+      ipv4: {
+        pattern: "\\b(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}\\b",
+        flags: "g",
+        text: "192.168.0.1\n10.0.0.256\n8.8.8.8"
+      },
+      uuid: {
+        pattern: "\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}\\b",
+        flags: "g",
+        text: "550e8400-e29b-41d4-a716-446655440000\nnot-a-uuid"
+      },
+      semver: {
+        pattern: "\\bv?(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?\\b",
+        flags: "g",
+        text: "v1.2.3\n2.0.0-beta.1\n1.2"
+      },
+      "iso-date": {
+        pattern: "\\b\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])\\b",
+        flags: "g",
+        text: "2026-05-26\n2026-13-01\n2025-12-31"
+      },
+      "time-24h": {
+        pattern: "\\b(?:[01]\\d|2[0-3]):[0-5]\\d\\b",
+        flags: "g",
+        text: "09:30\n23:59\n24:30"
+      },
+      "hex-color": {
+        pattern: "#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b",
+        flags: "g",
+        text: "#0ea5e9\n#1f2937cc\n#xyzxyz"
+      },
+      slug: {
+        pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        flags: "m",
+        text: "json-formatter\nbad_slug\napi-response-viewer"
+      },
+      "filename-ext": {
+        pattern: "\\b[\\w.-]+\\.[A-Za-z0-9]{1,10}\\b",
+        flags: "g",
+        text: "report.json\narchive.tar.gz\nREADME"
+      },
+      jwt: {
+        pattern: "\\b[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.?[A-Za-z0-9-_]*\\b",
+        flags: "g",
+        text: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature\ninvalid.token"
+      },
+      bearer: {
+        pattern: "^Bearer\\s+[A-Za-z0-9-._~+/]+=*$",
+        flags: "m",
+        text: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature\nBasic dXNlcjpwYXNz"
+      },
+      "api-path": {
+        pattern: "^\\/(?:[A-Za-z0-9._~-]+\\/)*[A-Za-z0-9._~-]*$",
+        flags: "m",
+        text: "/users/123\n/api/v1/health\nhttps://example.com/users"
+      }
+    };
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    presetSelect.addEventListener("change", () => {
+      const preset = presets[presetSelect.value];
+      if (!preset) return;
+      patternInput.value = preset.pattern;
+      flagsInput.value = preset.flags;
+      textInput.value = preset.text;
+      output.value = "";
+      setStatus("Preset loaded");
+    });
+
+    root.addEventListener("click", (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        patternInput.value = samplePattern;
+        flagsInput.value = sampleFlags;
+        textInput.value = sampleText;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        patternInput.value = "";
+        flagsInput.value = "";
+        presetSelect.value = "";
+        textInput.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Test") {
+        if (!patternInput.value.trim()) {
+          output.value = "Enter a regex pattern to test.";
+          setStatus("Input required", false);
+          return;
+        }
+        if (!textInput.value) {
+          output.value = "Enter text to test against the regex pattern.";
+          setStatus("Input required", false);
+          return;
+        }
+        try {
+          const regex = new RegExp(patternInput.value, flagsInput.value);
+          const matches = regex.global
+            ? Array.from(textInput.value.matchAll(regex))
+            : (() => {
+                const match = regex.exec(textInput.value);
+                return match ? [match] : [];
+              })();
+          output.value = matches.length
+            ? matches
+                .map((match, index) => `Match ${index + 1}: ${JSON.stringify(match[0])} at index ${match.index}`)
+                .join("\n")
+            : "No matches found.";
+          setStatus(matches.length ? `${matches.length} matches found` : "No matches found");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Invalid regular expression";
+          setStatus("Invalid regex", false);
+        }
+      }
+    });
+  })();
+</script>

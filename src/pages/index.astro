@@ -1,0 +1,190 @@
+---
+import ArticleCard from "@/components/ArticleCard.astro";
+import CategoryCard from "@/components/CategoryCard.astro";
+import HeroSearch from "@/components/HeroSearch.astro";
+import ToolCard from "@/components/ToolCard.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { siteConfig } from "@/config/site";
+import { articles, categories, getToolById, tools } from "@/data/site-content";
+import { buildWebsiteJsonLd } from "@/lib/json-ld";
+import { buildSeo } from "@/lib/seo";
+
+const seo = buildSeo({
+  title: "Fast JSON, JWT, Encoding, API, and Regex Utilities",
+  description: siteConfig.description,
+  path: "/",
+  keywords: [
+    "developer tools",
+    "json formatter",
+    "jwt decoder",
+    "base64 encode decode",
+    "regex tester",
+    "http status checker"
+  ]
+});
+
+const featuredTools = [
+  "json-formatter",
+  "jwt-decoder",
+  "base64url",
+  "hash-generator",
+  "http-status-checker",
+  "regex-tester"
+]
+  .map((id) => getToolById(id))
+  .filter(Boolean);
+const latestArticles = articles.slice(0, 3);
+---
+
+<BaseLayout seo={seo} jsonLd={[buildWebsiteJsonLd()]}>
+  <section class="shell hero-stage relative overflow-hidden pt-14 pb-20 lg:pt-20 lg:pb-28" data-hero-stage>
+    <div class="aurora-layer" data-hero-depth="0.08"></div>
+    <div class="hero-trails" data-hero-depth="0.14"></div>
+    <div class="pointer-events-none absolute inset-x-0 top-16 -z-10 mx-auto h-72 max-w-5xl rounded-full bg-gradient-to-r from-sky-200/20 via-white/80 to-slate-200/20 blur-3xl"></div>
+    <div class="grid gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+      <div>
+        <div class="eyebrow">Everyday Dev Tools</div>
+        <h1 class="headline mt-7 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-6xl lg:text-7xl">
+          Fast tools for everyday debugging and data cleanup.
+        </h1>
+        <p class="mt-6 max-w-2xl text-lg leading-9 text-slate-600">
+          JSON, JWT, encoding, API, and regex tools that open fast, stay out of the way, and do the job.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/json/formatter/" class="btn-primary">Open a tool</a>
+          <a href="/tools/" class="btn-secondary">Browse all tools</a>
+        </div>
+        <div class="mt-8 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+          <span class="status-pill border-slate-200 bg-white/70 text-slate-600">Fast to open</span>
+          <span class="status-pill border-slate-200 bg-white/70 text-slate-600">Works in the browser</span>
+          <span class="status-pill border-slate-200 bg-white/70 text-slate-600">Built for quick checks</span>
+        </div>
+      </div>
+      <div class="hero-monitor relative overflow-hidden rounded-[2rem] p-5 sm:p-6 lg:p-7">
+        <div class="grid-lines absolute inset-0"></div>
+        <div class="noise-layer"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <div class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Realtime surface</div>
+              <div class="mt-2 text-lg font-semibold text-slate-950">Fluid system, static delivery</div>
+            </div>
+            <span class="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">Live</span>
+          </div>
+          <div class="mt-6 grid gap-3">
+            <div class="rounded-2xl border border-slate-200 bg-white/88 p-4">
+              <div class="text-sm font-semibold text-slate-950">JSON + API work</div>
+              <p class="mt-1 text-sm leading-7 text-slate-600">Format, validate, compare, minify, and convert payloads when an API response gets messy.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white/88 p-4">
+              <div class="text-sm font-semibold text-slate-950">Auth + encoding</div>
+              <p class="mt-1 text-sm leading-7 text-slate-600">Decode tokens, fix encoding issues, generate hashes, and reproduce signatures without leaving the browser.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white/88 p-4">
+              <div class="text-sm font-semibold text-slate-950">Quick debugging</div>
+              <p class="mt-1 text-sm leading-7 text-slate-600">Spot-check a public endpoint or test a regex before you wire it into code.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12">
+      <HeroSearch />
+    </div>
+  </section>
+
+  <script is:inline>
+    (() => {
+      const stage = document.querySelector("[data-hero-stage]");
+      if (!(stage instanceof HTMLElement)) return;
+      const layers = Array.from(stage.querySelectorAll("[data-hero-depth]"));
+
+      const update = (clientX, clientY) => {
+        const rect = stage.getBoundingClientRect();
+        const x = ((clientX - rect.left) / rect.width - 0.5) * 2;
+        const y = ((clientY - rect.top) / rect.height - 0.5) * 2;
+        layers.forEach((layer) => {
+          if (!(layer instanceof HTMLElement)) return;
+          const depth = Number(layer.dataset.heroDepth || 0);
+          layer.style.transform = `translate3d(${x * depth * 28}px, ${y * depth * 22}px, 0)`;
+        });
+      };
+
+      stage.addEventListener("pointermove", (event) => {
+        update(event.clientX, event.clientY);
+      });
+
+      stage.addEventListener("pointerleave", () => {
+        layers.forEach((layer) => {
+          if (!(layer instanceof HTMLElement)) return;
+          layer.style.transform = "";
+        });
+      });
+    })();
+  </script>
+
+  <section class="shell pb-20 lg:pb-24">
+    <div class="flex items-end justify-between gap-6">
+      <div>
+        <div class="eyebrow">Categories</div>
+        <h2 class="headline mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">Browse by task, not by guesswork</h2>
+      </div>
+      <a href="/tools/" class="hidden text-sm font-semibold text-slate-600 hover:text-slate-950 md:block">See all tools</a>
+    </div>
+    <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+      {
+        categories.map((category) => (
+          <CategoryCard
+            eyebrow={category.eyebrow}
+            name={category.name}
+            description={category.description}
+            href={`/${category.slug}/`}
+          />
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="shell pb-20 lg:pb-24">
+    <div class="surface flex flex-col gap-6 rounded-[2rem] px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Why It Works</div>
+        <p class="mt-2 text-sm leading-7 text-slate-600">
+          These tools are built for quick checks, clean output, and fewer tabs open at once.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3 text-sm font-semibold text-slate-500">
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2">No sign-up</span>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2">Clean output</span>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2">Tool-first layout</span>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2">Less tab hopping</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell pb-20 lg:pb-24">
+    <div class="flex items-end justify-between gap-6">
+      <div>
+        <div class="eyebrow">Featured Tools</div>
+        <h2 class="headline mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">The tools most people will start with</h2>
+      </div>
+    </div>
+    <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {featuredTools.map((tool) => <ToolCard tool={tool} />)}
+    </div>
+  </section>
+
+  <section class="shell pb-24">
+    <div class="flex items-end justify-between gap-6">
+      <div>
+        <div class="eyebrow">Content Engine</div>
+        <h2 class="headline mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">Short guides that answer the follow-up questions</h2>
+      </div>
+      <a href="/blog/" class="hidden text-sm font-semibold text-slate-600 hover:text-slate-950 md:block">Open blog</a>
+    </div>
+    <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {latestArticles.map((article) => <ArticleCard article={article} />)}
+    </div>
+  </section>
+</BaseLayout>

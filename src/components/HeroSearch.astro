@@ -1,0 +1,225 @@
+---
+const previewPanels = [
+  {
+    name: "Format",
+    title: "JSON Formatter",
+    href: "/json/formatter/",
+    status: "Ready",
+    statusTone: "bg-sky-50 text-sky-700",
+    label: "Pretty print",
+    tone: "bg-sky-50 text-sky-700 border-sky-200",
+    input: '{ "status": "ok", "version": 1, "tools": 16 }',
+    output: `{
+  "status": "ok",
+  "version": 1,
+  "tools": 16
+}`,
+    footer: "Readable output for tickets, docs, and debugging."
+  },
+  {
+    name: "Decode",
+    title: "JWT Decoder",
+    href: "/jwt/decoder/",
+    status: "Local",
+    statusTone: "bg-emerald-50 text-emerald-700",
+    label: "Inspect claims",
+    tone: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    input: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    output: `{
+  "sub": "1234567890",
+  "scope": "read:tools",
+  "exp": 1716560400
+}`,
+    footer: "Inspect payload claims without sending tokens to a server."
+  },
+  {
+    name: "Sign",
+    title: "HMAC Generator",
+    href: "/encode/hmac-generator/",
+    status: "Signed",
+    statusTone: "bg-amber-50 text-amber-700",
+    label: "Webhook auth",
+    tone: "bg-amber-50 text-amber-700 border-amber-200",
+    input: `message: {"event":"build.completed"}
+secret: super-secret-signing-key`,
+    output: "7b6a0c9f0e1f5b9f9b89a8b7...",
+    footer: "Generate request signatures and webhook verification samples."
+  },
+  {
+    name: "Match",
+    title: "Regex Tester",
+    href: "/regex/tester/",
+    status: "2 matches",
+    statusTone: "bg-violet-50 text-violet-700",
+    label: "Pattern debug",
+    tone: "bg-violet-50 text-violet-700 border-violet-200",
+    input: "Pattern: \\b[A-Z]{2,}\\b\nText: API returned OK for CDN",
+    output: `Match 1: API
+Match 2: OK
+Match 3: CDN`,
+    footer: "Tight feedback loops for validation, parsing, and text extraction."
+  }
+];
+---
+
+<div class="hero-monitor relative overflow-hidden rounded-[2rem] p-5 sm:p-6" data-preview-root>
+  <div class="grid-lines absolute inset-0"></div>
+  <div class="noise-layer"></div>
+  <div class="hero-trails"></div>
+  <div class="relative grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Quick Start</div>
+      <p class="mt-3 max-w-xl text-sm leading-7 text-slate-600">
+        Start with the tools people reach for most: cleanup a payload, inspect a token, sign a message, test a regex, or check an endpoint.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-2">
+        <a href={previewPanels[0].href} class="btn-primary" data-preview-link>Open JSON Formatter</a>
+        <a href="/tools/" class="btn-secondary">Browse All Tools</a>
+      </div>
+    </div>
+    <div class="rounded-[1.4rem] border border-slate-200 bg-white/80 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live preview</div>
+          <div class="mt-1 min-h-[1.25rem] text-sm font-semibold text-slate-950" data-preview-title>{previewPanels[0].title}</div>
+        </div>
+        <span class:list={[
+          "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+          previewPanels[0].statusTone
+        ]} data-preview-status>{previewPanels[0].status}</span>
+      </div>
+      <div class="mt-4 grid gap-3 text-xs sm:grid-cols-3">
+      {
+        previewPanels.map((mode, index) => (
+          <div class:list={[
+            "rounded-2xl border px-3 py-2 transition duration-200",
+            mode.tone
+            ]} data-preview-tab data-preview-index={String(index)}>
+              <div class="font-semibold">{mode.name}</div>
+              <div class="mt-1 opacity-80">{mode.label}</div>
+            </div>
+          ))
+        }
+      </div>
+      <div class="mt-4 min-h-[15.5rem] rounded-[1.15rem] border border-slate-200 bg-slate-950 p-4 font-mono text-[11px] leading-6 text-slate-100 transition duration-200" data-preview-shell>
+        <div class="text-slate-400">Input</div>
+        <div class="mt-2 min-h-[3.5rem] whitespace-pre-wrap" data-preview-input>{previewPanels[0].input}</div>
+        <div class="mt-4 text-slate-400">Output</div>
+        <div class="mt-2 min-h-[5.5rem] whitespace-pre-wrap text-sky-300" data-preview-output>{previewPanels[0].output}</div>
+      </div>
+      <div class="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</div>
+          <div class="mt-1 min-h-[2.75rem] text-sm font-semibold text-slate-950" data-preview-footer>{previewPanels[0].footer}</div>
+        </div>
+        <div class="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_8px_rgba(16,185,129,0.12)]"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+
+    const panels = [
+      {
+        title: "JSON Formatter",
+        href: "/json/formatter/",
+        status: "Ready",
+        statusTone: "bg-sky-50 text-sky-700",
+        input: '{ "status": "ok", "version": 1, "tools": 16 }',
+        output: `{\n  "status": "ok",\n  "version": 1,\n  "tools": 16\n}`,
+        footer: "Readable output for tickets, docs, and debugging."
+      },
+      {
+        title: "JWT Decoder",
+        href: "/jwt/decoder/",
+        status: "Local",
+        statusTone: "bg-emerald-50 text-emerald-700",
+        input: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        output: `{\n  "sub": "1234567890",\n  "scope": "read:tools",\n  "exp": 1716560400\n}`,
+        footer: "Inspect payload claims without sending tokens to a server."
+      },
+      {
+        title: "HMAC Generator",
+        href: "/encode/hmac-generator/",
+        status: "Signed",
+        statusTone: "bg-amber-50 text-amber-700",
+        input: 'message: {"event":"build.completed"}\nsecret: super-secret-signing-key',
+        output: "7b6a0c9f0e1f5b9f9b89a8b7...",
+        footer: "Generate request signatures and webhook verification samples."
+      },
+      {
+        title: "Regex Tester",
+        href: "/regex/tester/",
+        status: "2 matches",
+        statusTone: "bg-violet-50 text-violet-700",
+        input: "Pattern: \\\\b[A-Z]{2,}\\\\b\nText: API returned OK for CDN",
+        output: "Match 1: API\nMatch 2: OK\nMatch 3: CDN",
+        footer: "Tight feedback loops for validation, parsing, and text extraction."
+      }
+    ];
+
+    const title = root.querySelector("[data-preview-title]");
+    const status = root.querySelector("[data-preview-status]");
+    const input = root.querySelector("[data-preview-input]");
+    const output = root.querySelector("[data-preview-output]");
+    const footer = root.querySelector("[data-preview-footer]");
+    const shell = root.querySelector("[data-preview-shell]");
+    const link = root.querySelector("[data-preview-link]");
+    const tabs = Array.from(root.querySelectorAll("[data-preview-tab]"));
+
+    if (!(title instanceof HTMLElement) || !(status instanceof HTMLElement) || !(input instanceof HTMLElement) || !(output instanceof HTMLElement) || !(footer instanceof HTMLElement) || !(shell instanceof HTMLElement) || !(link instanceof HTMLAnchorElement) || !tabs.length) return;
+
+    let activeIndex = 0;
+    let timer = 0;
+
+    const render = (index) => {
+      activeIndex = index;
+      const panel = panels[index];
+      title.textContent = panel.title;
+      link.href = panel.href;
+      link.textContent = `Open ${panel.title}`;
+      status.textContent = panel.status;
+      status.className = `rounded-full px-2.5 py-1 text-[11px] font-semibold ${panel.statusTone}`;
+      input.textContent = panel.input;
+      output.textContent = panel.output;
+      footer.textContent = panel.footer;
+      shell.animate(
+        [
+          { opacity: 0.78 },
+          { opacity: 1 }
+        ],
+        { duration: 180, easing: "ease-out" }
+      );
+      tabs.forEach((tab, tabIndex) => {
+        if (!(tab instanceof HTMLElement)) return;
+        tab.style.transform = "translateY(0)";
+        tab.style.boxShadow = tabIndex === index ? "0 8px 16px rgba(15, 23, 42, 0.05)" : "none";
+      });
+    };
+
+    const restart = () => {
+      window.clearInterval(timer);
+      timer = window.setInterval(() => {
+        render((activeIndex + 1) % panels.length);
+      }, 2400);
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("mouseenter", () => {
+        render(index);
+        restart();
+      });
+      tab.addEventListener("click", () => {
+        render(index);
+        restart();
+      });
+    });
+
+    render(0);
+    restart();
+  })();
+</script>

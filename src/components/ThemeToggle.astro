@@ -1,0 +1,44 @@
+<button
+  type="button"
+  class="theme-toggle inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-950"
+  data-theme-toggle
+  aria-label="Toggle color theme"
+  aria-pressed="true"
+>
+  <span class="theme-toggle__icon" aria-hidden="true">◐</span>
+  <span class="theme-toggle__label">Light mode</span>
+</button>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLButtonElement)) return;
+
+    const label = root.querySelector(".theme-toggle__label");
+    const icon = root.querySelector(".theme-toggle__icon");
+
+    const applyState = () => {
+      const theme = document.documentElement.dataset.theme || "dark";
+      const isDark = theme === "dark";
+      root.setAttribute("aria-pressed", String(isDark));
+      if (label) label.textContent = isDark ? "Light mode" : "Dark mode";
+      if (icon) icon.textContent = isDark ? "◐" : "◑";
+    };
+
+    root.addEventListener("click", () => {
+      const current = document.documentElement.dataset.theme === "light" ? "light" : "dark";
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+      window.localStorage.setItem("edt-theme", next);
+      applyState();
+    });
+
+    applyState();
+    window.addEventListener("storage", (event) => {
+      if (event.key === "edt-theme" && event.newValue) {
+        document.documentElement.dataset.theme = event.newValue;
+        applyState();
+      }
+    });
+  })();
+</script>

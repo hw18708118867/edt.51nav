@@ -1,0 +1,45 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildWebsiteJsonLd } from "@/lib/json-ld";
+import { buildSeo } from "@/lib/seo";
+
+const seo = buildSeo({
+  title: "Contact",
+  description:
+    "Contact and feedback page for Everyday Dev Tools, including bug reports and requests for new tools.",
+  path: "/contact/",
+  keywords: ["contact developer tools site", "suggest new dev tool", "everyday dev tools contact"]
+});
+---
+
+<BaseLayout seo={seo} jsonLd={[buildWebsiteJsonLd()]}>
+  <section class="shell py-14 pb-24 lg:py-18">
+    <div class="max-w-4xl">
+      <div class="eyebrow">Contact</div>
+      <h1 class="headline mt-6 text-5xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-6xl">Suggestions, bug reports, and tool requests.</h1>
+      <p class="mt-6 text-lg leading-9 text-slate-600">
+        If a tool is missing, a page behaves strangely, or something feels unfinished, this is where that feedback belongs.
+      </p>
+    </div>
+    <div class="mt-10 grid gap-6 lg:grid-cols-3">
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Tool requests</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          The best requests are the boring, useful ones people search for every week.
+        </p>
+      </section>
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Bug reports</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          Include the tool name, a sample input, the expected result, and what actually happened.
+        </p>
+      </section>
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Feedback channel</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          Want to leave a message? Search for `51nav` on GitHub.
+        </p>
+      </section>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,88 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="Unicode Escape / Unescape"
+  description="Convert text into JavaScript-style Unicode escape sequences or turn escaped values back into readable characters."
+  controls={["Escape", "Unescape", "Clear", "Sample"]}
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Input</span>
+        <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-tool-input data-code-language="text" placeholder="Paste text or \\uXXXX sequences here"></textarea>
+    </label>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Output</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Unicode escapes</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="text" readonly placeholder="Result will appear here"></textarea>
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+        Useful for JSON payloads, JS source strings, logs, and debugging text that crosses encoding boundaries.
+      </div>
+    </label>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const sample = "Hello, 世界 👋";
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    const escapeUnicode = (value) =>
+      Array.from(value)
+        .map((char) => {
+          const code = char.codePointAt(0);
+          if (code === undefined) return "";
+          if (code <= 0xffff) return `\\u${code.toString(16).padStart(4, "0")}`;
+          const adjusted = code - 0x10000;
+          const high = 0xd800 + (adjusted >> 10);
+          const low = 0xdc00 + (adjusted & 0x3ff);
+          return `\\u${high.toString(16).padStart(4, "0")}\\u${low.toString(16).padStart(4, "0")}`;
+        })
+        .join("");
+
+    const unescapeUnicode = (value) =>
+      value.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+
+    root.addEventListener("click", (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sample;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Escape") {
+        output.value = escapeUnicode(input.value);
+        setStatus("Escaped");
+      } else if (action === "Unescape") {
+        try {
+          output.value = unescapeUnicode(input.value);
+          setStatus("Unescaped");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Unescape failed";
+          setStatus("Unescape failed", false);
+        }
+      }
+    });
+  })();
+</script>

@@ -1,0 +1,106 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="HMAC Generator"
+  description="Generate keyed HMAC signatures with SHA-1, SHA-256, or SHA-512 for webhook testing, signed requests, and auth debugging."
+  controls={["Generate", "Clear", "Sample"]}
+  note="HMAC uses a shared secret. Keep real production secrets out of screenshots and shared demos."
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+    <div class="space-y-5">
+      <label class="block">
+        <div class="mb-3 flex items-center justify-between gap-4">
+          <span class="text-sm font-semibold text-slate-900">Message</span>
+          <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+        </div>
+        <textarea class="tool-textarea min-h-[16rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-tool-input data-code-language="text" placeholder="Paste the message to sign"></textarea>
+      </label>
+      <label class="block">
+        <div class="mb-3 text-sm font-semibold text-slate-900">Secret key</div>
+        <textarea class="tool-textarea min-h-[10rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-secret-input data-code-language="text" placeholder="Paste the shared secret"></textarea>
+      </label>
+      <label class="block">
+        <div class="mb-3 text-sm font-semibold text-slate-900">Algorithm</div>
+        <select class="tool-input rounded-[1.5rem] bg-white" data-algorithm>
+          <option value="SHA-1">HMAC-SHA1</option>
+          <option value="SHA-256" selected>HMAC-SHA256</option>
+          <option value="SHA-512">HMAC-SHA512</option>
+        </select>
+      </label>
+    </div>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Signature</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hex output</span>
+      </div>
+      <textarea class="tool-textarea min-h-[34rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="text" readonly placeholder="Signature will appear here"></textarea>
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+        HMAC is commonly used in webhook verification, request signing, and shared-secret integrations.
+      </div>
+    </label>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const secret = root.querySelector("[data-secret-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const algorithm = root.querySelector("[data-algorithm]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLTextAreaElement) || !(secret instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(algorithm instanceof HTMLSelectElement) || !(status instanceof HTMLElement)) return;
+
+    const sampleMessage = '{"event":"build.completed","id":"evt_123"}';
+    const sampleSecret = "super-secret-signing-key";
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    const toHex = (buffer) =>
+      Array.from(new Uint8Array(buffer))
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+
+    const sign = async (message, key, selectedAlgorithm) => {
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(key),
+        { name: "HMAC", hash: { name: selectedAlgorithm } },
+        false,
+        ["sign"]
+      );
+      const signature = await crypto.subtle.sign("HMAC", cryptoKey, new TextEncoder().encode(message));
+      return toHex(signature);
+    };
+
+    root.addEventListener("click", async (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sampleMessage;
+        secret.value = sampleSecret;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        secret.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Generate") {
+        try {
+          output.value = await sign(input.value, secret.value, algorithm.value);
+          setStatus("Signature ready");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Signature failed";
+          setStatus("Signature failed", false);
+        }
+      }
+    });
+  })();
+</script>

@@ -1,0 +1,45 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildWebsiteJsonLd } from "@/lib/json-ld";
+import { buildSeo } from "@/lib/seo";
+
+const seo = buildSeo({
+  title: "About",
+  description:
+    "About Everyday Dev Tools and why the site is built around fast, simple utilities.",
+  path: "/about/",
+  keywords: ["about everyday dev tools", "developer tool site", "about devtools 51nav"]
+});
+---
+
+<BaseLayout seo={seo} jsonLd={[buildWebsiteJsonLd()]}>
+  <section class="shell py-14 pb-24 lg:py-18">
+    <div class="max-w-4xl">
+      <div class="eyebrow">About</div>
+      <h1 class="headline mt-6 text-5xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-6xl">Built for the small jobs developers keep doing.</h1>
+      <p class="mt-6 text-lg leading-9 text-slate-600">
+        Everyday Dev Tools exists for the moments when you need to format a payload, inspect a token, decode a string, or test a pattern without opening a heavy app.
+      </p>
+    </div>
+    <div class="mt-10 grid gap-6 lg:grid-cols-3">
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Why it exists</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          Plenty of utility sites are useful, but too many feel cluttered or make simple tasks slower than they need to be. This one is meant to stay direct.
+        </p>
+      </section>
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">How it is built</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          It is built to stay fast, predictable, and easy to expand as more tools are added over time.
+        </p>
+      </section>
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Where it is going</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          The site starts with the basics first. More tools can be added over time without rebuilding the structure from scratch.
+        </p>
+      </section>
+    </div>
+  </section>
+</BaseLayout>

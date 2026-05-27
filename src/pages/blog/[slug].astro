@@ -1,0 +1,45 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { articles } from "@/data/site-content";
+import { buildArticleJsonLd, buildWebsiteJsonLd } from "@/lib/json-ld";
+import { buildSeo } from "@/lib/seo";
+
+export const getStaticPaths = () =>
+  articles.map((article) => ({
+    params: { slug: article.slug },
+    props: { article }
+  }));
+
+const { article } = Astro.props;
+
+const seo = buildSeo({
+  title: article.title,
+  description: article.description,
+  path: `/blog/${article.slug}/`,
+  keywords: [article.category.toLowerCase(), "developer tutorial"],
+  type: "article"
+});
+---
+
+<BaseLayout seo={seo} jsonLd={[buildWebsiteJsonLd(), buildArticleJsonLd(article)]}>
+  <article class="shell py-12 lg:py-16">
+    <div class="max-w-4xl">
+      <div class="eyebrow">{article.category}</div>
+      <h1 class="headline mt-5 text-5xl font-bold tracking-tight text-slate-950">{article.title}</h1>
+      <div class="mt-4 text-sm text-slate-500">{article.publishedAt} · {article.readingTime}</div>
+      <p class="mt-6 text-lg leading-9 text-slate-600">{article.description}</p>
+    </div>
+    <div class="mt-10 max-w-4xl space-y-10">
+      {
+        article.sections.map((section) => (
+          <section class="section-card">
+            <h2 class="headline text-3xl font-bold tracking-tight text-slate-950">{section.title}</h2>
+            <div class="mt-5 space-y-4">
+              {section.paragraphs.map((paragraph) => <p class="prose-copy">{paragraph}</p>)}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </article>
+</BaseLayout>

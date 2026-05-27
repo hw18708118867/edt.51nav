@@ -1,0 +1,74 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="JSON Formatter"
+  description="Beautify raw JSON with stable two-space indentation for easier reading, review, and debugging."
+  controls={["Format", "Clear", "Sample"]}
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Input JSON</span>
+        <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-tool-input data-code-language="json" placeholder='{"name":"Everyday Dev Tools","type":"developer-utility"}'></textarea>
+    </label>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Formatted output</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Preview</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="json" readonly placeholder="Formatted JSON will appear here"></textarea>
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+        Clean formatting helps teams review payload shape, spot missing fields, and share examples in tickets or docs.
+      </div>
+    </label>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const sample = `{"name":"Everyday Dev Tools","items":[{"id":1,"label":"formatter"},{"id":2,"label":"validator"}],"active":true}`;
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    root.addEventListener("click", (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sample;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Format") {
+        if (!input.value.trim()) {
+          output.value = "Enter JSON to format.";
+          setStatus("Input required", false);
+          return;
+        }
+        try {
+          output.value = JSON.stringify(JSON.parse(input.value), null, 2);
+          setStatus("Formatted");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Invalid JSON";
+          setStatus("Invalid JSON", false);
+        }
+      }
+    });
+  })();
+</script>

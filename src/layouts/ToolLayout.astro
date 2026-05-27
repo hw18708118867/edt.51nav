@@ -1,0 +1,105 @@
+---
+import AdPlaceholder from "@/components/AdPlaceholder.astro";
+import AdsenseSlot from "@/components/AdsenseSlot.astro";
+import FaqSection from "@/components/FaqSection.astro";
+import LearnSection from "@/components/LearnSection.astro";
+import RelatedLinks from "@/components/RelatedLinks.astro";
+import ToolNavigator from "@/components/ToolNavigator.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import CodeHighlightRuntime from "../components/CodeHighlightRuntime.astro";
+import { getArticle, getToolById, type ToolMeta } from "@/data/site-content";
+import { buildFaqJsonLd, buildToolJsonLd, buildWebsiteJsonLd } from "@/lib/json-ld";
+import { buildSeo } from "@/lib/seo";
+import { getToolPath } from "@/lib/tool-links";
+
+interface Props {
+  tool: ToolMeta;
+}
+
+const { tool } = Astro.props;
+
+const seo = buildSeo({
+  title: tool.title,
+  description: tool.description,
+  path: getToolPath(tool.category, tool.slug),
+  keywords: tool.keywords
+});
+
+const relatedTools = tool.relatedToolIds
+  .map((id) => getToolById(id))
+  .filter(Boolean)
+  .map((item) => ({
+    href: getToolPath(item!.category, item!.slug),
+    label: item!.title,
+    description: item!.description
+  }));
+
+const relatedArticles = tool.relatedArticleSlugs
+  .map((slug) => getArticle(slug))
+  .filter(Boolean)
+  .map((item) => ({
+    href: `/blog/${item!.slug}/`,
+    label: item!.title,
+    description: item!.description
+  }));
+
+const showAdsense = import.meta.env.PUBLIC_ENABLE_ADSENSE === "true" && import.meta.env.PUBLIC_ADSENSE_TOOL_SIDEBAR_SLOT;
+---
+
+<BaseLayout
+  seo={seo}
+  jsonLd={[buildWebsiteJsonLd(), buildToolJsonLd(tool), buildFaqJsonLd(tool.faqs)]}
+>
+  <div class="shell py-10 lg:py-14">
+    <div class="mb-8 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+      <a href="/" class="hover:text-slate-900">Home</a>
+      <span>/</span>
+      <a href={`/${tool.category}/`} class="hover:text-slate-900">{tool.category}</a>
+      <span>/</span>
+      <span class="text-slate-900">{tool.slug}</span>
+    </div>
+    <div class="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
+      <aside class="hidden xl:block xl:sticky xl:top-24">
+        <ToolNavigator tool={tool} />
+      </aside>
+      <div class="min-w-0">
+        <div class="mb-6 xl:hidden">
+          <ToolNavigator tool={tool} />
+        </div>
+        <div class="tool-stage rounded-[2.25rem] border border-slate-200/80 bg-white/60 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.05)] backdrop-blur-xl lg:p-6">
+          <slot />
+        </div>
+      </div>
+    </div>
+    <div class="mt-10 grid gap-6 xl:grid-cols-[1fr_320px]">
+      <div class="space-y-6">
+        <FaqSection faqs={tool.faqs} />
+        <LearnSection title="How To Use It" sections={tool.learn} />
+        <RelatedLinks title="Related Tools" items={relatedTools} />
+        <RelatedLinks title="Related Articles" items={relatedArticles} />
+      </div>
+      <div class="space-y-6">
+        {
+          showAdsense ? (
+            <AdsenseSlot slot={import.meta.env.PUBLIC_ADSENSE_TOOL_SIDEBAR_SLOT!} format="rectangle" />
+          ) : (
+            <AdPlaceholder />
+          )
+        }
+        <section class="section-card">
+          <div class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">What to expect</div>
+          <h2 class="headline mt-4 text-2xl font-bold tracking-tight text-slate-950">Built for quick, low-friction checks</h2>
+          <p class="mt-3 text-sm leading-7 text-slate-600">
+            These pages are meant to stay direct: input at the top, results immediately below, then the FAQ and related guides if you need more context.
+          </p>
+          <ul class="mt-5 space-y-3 text-sm leading-7 text-slate-600">
+            <li>Most tools work entirely in the browser.</li>
+            <li>Inputs are not sent to a custom backend unless a tool clearly says it makes a network request.</li>
+            <li>Related tools and short guides are included below when the task usually needs a follow-up step.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+  <CodeHighlightRuntime />
+</BaseLayout>

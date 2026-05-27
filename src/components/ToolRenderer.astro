@@ -1,0 +1,44 @@
+---
+import Base64Tool from "@/components/tools/Base64Tool.astro";
+import Base64UrlTool from "@/components/tools/Base64UrlTool.astro";
+import HashGeneratorTool from "@/components/tools/HashGeneratorTool.astro";
+import HexTool from "@/components/tools/HexTool.astro";
+import HmacGeneratorTool from "@/components/tools/HmacGeneratorTool.astro";
+import HtmlEncodeTool from "@/components/tools/HtmlEncodeTool.astro";
+import HttpStatusCheckerTool from "@/components/tools/HttpStatusCheckerTool.astro";
+import JsonCompareTool from "@/components/tools/JsonCompareTool.astro";
+import JsonFormatterTool from "@/components/tools/JsonFormatterTool.astro";
+import JsonMinifyTool from "@/components/tools/JsonMinifyTool.astro";
+import JsonToYamlTool from "@/components/tools/JsonToYamlTool.astro";
+import JsonValidatorTool from "@/components/tools/JsonValidatorTool.astro";
+import JwtDecoderTool from "@/components/tools/JwtDecoderTool.astro";
+import RegexTesterTool from "@/components/tools/RegexTesterTool.astro";
+import UnicodeEscapeTool from "@/components/tools/UnicodeEscapeTool.astro";
+import UrlEncodeTool from "@/components/tools/UrlEncodeTool.astro";
+
+interface Props {
+  toolId: string;
+}
+
+const { toolId } = Astro.props;
+---
+
+{
+  toolId === "json-formatter" ? <JsonFormatterTool />
+  : toolId === "json-validator" ? <JsonValidatorTool />
+  : toolId === "json-compare" ? <JsonCompareTool />
+  : toolId === "json-minify" ? <JsonMinifyTool />
+  : toolId === "json-to-yaml" ? <JsonToYamlTool />
+  : toolId === "jwt-decoder" ? <JwtDecoderTool />
+  : toolId === "base64" ? <Base64Tool />
+  : toolId === "base64url" ? <Base64UrlTool />
+  : toolId === "urlencode" ? <UrlEncodeTool />
+  : toolId === "html-encode" ? <HtmlEncodeTool />
+  : toolId === "unicode-escape" ? <UnicodeEscapeTool />
+  : toolId === "hex" ? <HexTool />
+  : toolId === "hash-generator" ? <HashGeneratorTool />
+  : toolId === "hmac-generator" ? <HmacGeneratorTool />
+  : toolId === "http-status-checker" ? <HttpStatusCheckerTool />
+  : toolId === "regex-tester" ? <RegexTesterTool />
+  : <div class="section-card">Tool component not implemented.</div>
+}

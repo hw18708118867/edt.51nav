@@ -1,0 +1,312 @@
+<script>
+  import { EditorState } from "@codemirror/state";
+  import { history, historyKeymap, defaultKeymap, indentWithTab } from "@codemirror/commands";
+  import {
+    EditorView,
+    keymap,
+    drawSelection,
+    dropCursor,
+    highlightActiveLine,
+    highlightSpecialChars,
+    rectangularSelection,
+    crosshairCursor,
+    placeholder,
+    ViewPlugin,
+    Decoration
+  } from "@codemirror/view";
+  import { bracketMatching, indentOnInput, syntaxHighlighting, HighlightStyle } from "@codemirror/language";
+  import { tags } from "@lezer/highlight";
+
+  const highlightStyle = HighlightStyle.define([
+    { tag: tags.propertyName, color: "var(--cm-token-key)" },
+    { tag: [tags.string, tags.special(tags.string)], color: "var(--cm-token-string)" },
+    { tag: [tags.number, tags.integer, tags.float], color: "var(--cm-token-number)" },
+    { tag: [tags.bool, tags.null], color: "var(--cm-token-boolean)" },
+    { tag: [tags.brace, tags.squareBracket, tags.separator], color: "var(--cm-token-punctuation)" },
+    { tag: [tags.keyword, tags.atom], color: "var(--cm-token-keyword)" }
+  ]);
+
+  const editorTheme = EditorView.theme({
+    "&": {
+      height: "100%",
+      color: "var(--cm-editor-ink)",
+      backgroundColor: "transparent",
+      fontFamily: "inherit",
+      fontSize: "inherit"
+    },
+    "&.cm-focused": {
+      outline: "none"
+    },
+    ".cm-scroller": {
+      height: "100%",
+      overflow: "auto",
+      fontFamily: "inherit",
+      lineHeight: "inherit"
+    },
+    ".cm-content": {
+      minHeight: "100%",
+      padding: "0",
+      caretColor: "var(--cm-editor-caret)"
+    },
+    ".cm-line": {
+      padding: "0"
+    },
+    ".cm-cursor, .cm-dropCursor": {
+      borderLeftColor: "var(--cm-editor-caret)"
+    },
+    ".cm-selectionBackground": {
+      backgroundColor: "var(--cm-editor-selection)"
+    },
+    "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+      backgroundColor: "var(--cm-editor-selection)"
+    },
+    ".cm-activeLine": {
+      backgroundColor: "transparent"
+    },
+    ".cm-activeLineGutter": {
+      backgroundColor: "transparent"
+    },
+    ".cm-gutters": {
+      display: "none",
+      backgroundColor: "transparent",
+      border: "none"
+    },
+    ".cm-placeholder": {
+      color: "var(--cm-editor-placeholder)"
+    }
+  });
+
+  const regexRuleSet = (rules) =>
+    ViewPlugin.fromClass(
+      class {
+        constructor(view) {
+          this.decorations = this.buildDecorations(view);
+        }
+
+        update(update) {
+          if (update.docChanged || update.viewportChanged) {
+            this.decorations = this.buildDecorations(update.view);
+          }
+        }
+
+        buildDecorations(view) {
+          const marks = [];
+
+          for (const { from, to } of view.visibleRanges) {
+            const text = view.state.doc.sliceString(from, to);
+
+            for (const rule of rules) {
+              const expression = new RegExp(rule.pattern.source, rule.pattern.flags);
+              let match;
+
+              while ((match = expression.exec(text))) {
+                const value = match[0];
+                if (!value) break;
+
+                marks.push(
+                  Decoration.mark({ class: rule.className }).range(
+                    from + match.index,
+                    from + match.index + value.length
+                  )
+                );
+              }
+            }
+          }
+
+          return Decoration.set(marks, true);
+        }
+      },
+      {
+        decorations: (plugin) => plugin.decorations
+      }
+    );
+
+  const fallbackExtensions = {
+    regex: [
+      regexRuleSet([
+        { pattern: /\\[wWsSdDbBtrnv0\\/.+*?^$()[\]{}|-]/g, className: "cm-token-number" },
+        { pattern: /[\[\]{}()|.+*?^$]/g, className: "cm-token-punctuation" }
+      ])
+    ],
+    url: [
+      regexRuleSet([
+        { pattern: /https?:\/\/[^\s/?#]+/g, className: "cm-token-key" },
+        { pattern: /[?&][^=&\s]+(?==)/g, className: "cm-token-string" },
+        { pattern: /%[0-9A-Fa-f]{2}/g, className: "cm-token-number" }
+      ])
+    ],
+    shell: [
+      regexRuleSet([
+        { pattern: /\b(curl|GET|POST|PUT|DELETE|PATCH|HEAD)\b/g, className: "cm-token-keyword" },
+        { pattern: /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, className: "cm-token-string" },
+        { pattern: /https?:\/\/\S+/g, className: "cm-token-number" }
+      ])
+    ],
+    text: [
+      regexRuleSet([
+        { pattern: /https?:\/\/\S+/g, className: "cm-token-key" }
+      ])
+    ]
+  };
+
+  const languageLoaders = {
+    json: async () => {
+      const { json } = await import("@codemirror/lang-json");
+      return [json()];
+    },
+    yaml: async () => {
+      const { yaml } = await import("@codemirror/lang-yaml");
+      return [yaml()];
+    },
+    regex: async () => fallbackExtensions.regex,
+    url: async () => fallbackExtensions.url,
+    shell: async () => fallbackExtensions.shell,
+    text: async () => fallbackExtensions.text
+  };
+
+  const baseExtensions = ({ placeholderText, readOnly, singleLine }) => {
+    const extensions = [
+      highlightSpecialChars(),
+      history(),
+      drawSelection(),
+      dropCursor(),
+      indentOnInput(),
+      bracketMatching(),
+      rectangularSelection(),
+      crosshairCursor(),
+      highlightActiveLine(),
+      syntaxHighlighting(highlightStyle, { fallback: true }),
+      editorTheme,
+      keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])
+    ];
+
+    if (!singleLine) {
+      extensions.push(EditorView.lineWrapping);
+    } else {
+      extensions.push(
+        keymap.of([
+          {
+            key: "Enter",
+            run: () => true
+          }
+        ])
+      );
+    }
+
+    if (placeholderText) {
+      extensions.push(placeholder(placeholderText));
+    }
+
+    if (readOnly) {
+      extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
+    }
+
+    return extensions;
+  };
+
+  const syncFieldValue = (field, value) => {
+    if (field.value === value) return;
+    field.value = value;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  const createHost = (field) => {
+    const singleLine = field instanceof HTMLInputElement;
+    const styles = window.getComputedStyle(field);
+    const host = document.createElement("div");
+    host.className = `${field.className} code-editor-host ${singleLine ? "code-editor-host--single" : "code-editor-host--multi"} ${field.readOnly ? "code-editor-host--readonly" : "code-editor-host--editable"}`;
+    host.dataset.codeLanguage = field.dataset.codeLanguage || "text";
+    host.style.minHeight = singleLine ? styles.height : styles.minHeight;
+    host.style.lineHeight = styles.lineHeight;
+    host.style.font = styles.font;
+    return host;
+  };
+
+  const enhanceField = async (field) => {
+    if (!(field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement)) return;
+    if (field.dataset.codeEnhanced === "true") return;
+
+    const language = field.dataset.codeLanguage || "text";
+    const singleLine = field instanceof HTMLInputElement;
+    const host = createHost(field);
+
+    field.parentNode?.insertBefore(host, field);
+    field.classList.add("code-editor-source");
+    field.dataset.codeEnhanced = "true";
+
+    const languageExtensions = await (languageLoaders[language] || languageLoaders.text)();
+    const state = EditorState.create({
+      doc: field.value,
+      extensions: [
+        ...baseExtensions({
+          placeholderText: field.getAttribute("placeholder") || "",
+          readOnly: field.readOnly,
+          singleLine
+        }),
+        ...languageExtensions,
+        EditorView.updateListener.of((update) => {
+          if (!update.docChanged) return;
+
+          let nextValue = update.state.doc.toString();
+          if (singleLine && /[\r\n]/.test(nextValue)) {
+            nextValue = nextValue.replace(/[\r\n]+/g, " ");
+            if (nextValue !== update.state.doc.toString()) {
+              update.view.dispatch({
+                changes: { from: 0, to: update.state.doc.length, insert: nextValue }
+              });
+              return;
+            }
+          }
+
+          syncFieldValue(field, nextValue);
+        })
+      ]
+    });
+
+    const view = new EditorView({
+      state,
+      parent: host
+    });
+
+    let lastValue = field.value;
+
+    const syncFromField = () => {
+      if (!view.dom.isConnected) return;
+
+      if (field.value !== lastValue && field.value !== view.state.doc.toString()) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: field.value }
+        });
+      }
+
+      lastValue = field.value;
+      window.requestAnimationFrame(syncFromField);
+    };
+
+    host.dataset.focused = "false";
+    host.addEventListener("click", () => {
+      if (!field.readOnly) view.focus();
+    });
+    view.dom.addEventListener("focusin", () => {
+      host.dataset.focused = "true";
+    });
+    view.dom.addEventListener("focusout", () => {
+      host.dataset.focused = "false";
+    });
+    window.requestAnimationFrame(syncFromField);
+  };
+
+  const boot = async () => {
+    const fields = Array.from(document.querySelectorAll("[data-code-language]"));
+    await Promise.all(fields.map((field) => enhanceField(field)));
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      void boot();
+    }, { once: true });
+  } else {
+    void boot();
+  }
+</script>

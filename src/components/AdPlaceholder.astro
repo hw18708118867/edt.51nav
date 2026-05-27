@@ -1,0 +1,17 @@
+---
+interface Props {
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+---
+
+<aside class:list={[
+  "rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50/90 text-slate-500",
+  compact ? "p-5" : "p-8"
+]}>
+  <div class="text-xs font-semibold uppercase tracking-[0.2em]">Sidebar Space</div>
+  <p class="mt-3 text-sm leading-7">
+    Reserved for a small sidebar module so the main tool area stays clear and easy to use.
+  </p>
+</aside>

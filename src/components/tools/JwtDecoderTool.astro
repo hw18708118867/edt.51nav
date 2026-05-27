@@ -1,0 +1,116 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="JWT Decoder"
+  description="Decode JWT header and payload locally so you can inspect claims and timestamps without sending the token anywhere."
+  controls={["Decode", "Clear", "Sample"]}
+  note="Decoding is not signature verification. This tool reads token contents only."
+>
+  <div class="mt-6 grid gap-6">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">JWT token</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Paste token</span>
+      </div>
+      <textarea class="tool-textarea min-h-[10rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-tool-input data-code-language="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
+    </label>
+    <div class="grid gap-6 xl:grid-cols-2">
+      <label class="block">
+        <div class="mb-3 flex items-center justify-between gap-4">
+          <span class="text-sm font-semibold text-slate-900">Decoded header</span>
+          <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+        </div>
+        <textarea class="tool-textarea min-h-[18rem] rounded-[1.5rem] bg-white" data-header-output data-code-language="json" readonly placeholder="JWT header will appear here"></textarea>
+      </label>
+      <label class="block">
+        <div class="mb-3 text-sm font-semibold text-slate-900">Decoded payload</div>
+        <textarea class="tool-textarea min-h-[18rem] rounded-[1.5rem] bg-white" data-payload-output data-code-language="json" readonly placeholder="JWT payload will appear here"></textarea>
+      </label>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+      Claims are shown in readable form, including common timestamps when present.
+    </div>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const headerOutput = root.querySelector("[data-header-output]");
+    const payloadOutput = root.querySelector("[data-payload-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLTextAreaElement) || !(headerOutput instanceof HTMLTextAreaElement) || !(payloadOutput instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const sample = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkRldlRvb2xzIFVzZXIiLCJpYXQiOjE3MTY1NTY4MDAsImV4cCI6MTcxNjU2MDQwMH0.signature";
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    const base64UrlDecode = (segment) => {
+      if (/[^A-Za-z0-9\-_]/.test(segment) || segment.length % 4 === 1) {
+        throw new Error("JWT segments must be valid Base64URL strings.");
+      }
+      const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized + "=".repeat((4 - (normalized.length % 4 || 4)) % 4);
+      const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+      return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    };
+
+    const parseJwtPart = (segment) => {
+      const value = JSON.parse(base64UrlDecode(segment));
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        throw new Error("JWT segments must decode to JSON objects.");
+      }
+      const copy = { ...value };
+      for (const key of ["iat", "exp", "nbf"]) {
+        if (typeof copy[key] === "number") {
+          copy[`${key}_readable`] = new Date(copy[key] * 1000).toISOString();
+        }
+      }
+      return JSON.stringify(copy, null, 2);
+    };
+
+    root.addEventListener("click", (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sample;
+        headerOutput.value = "";
+        payloadOutput.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        headerOutput.value = "";
+        payloadOutput.value = "";
+        setStatus("Ready");
+      } else if (action === "Decode") {
+        if (!input.value.trim()) {
+          headerOutput.value = "";
+          payloadOutput.value = "Enter a JWT to decode.";
+          setStatus("Input required", false);
+          return;
+        }
+        try {
+          const segments = input.value.trim().split(".");
+          if (segments.length < 2) throw new Error("A JWT must contain at least header and payload segments.");
+          if (segments.length > 3) throw new Error("A JWT can contain at most header, payload, and signature segments.");
+          const [header, payload] = segments;
+          if (!header || !payload) throw new Error("A JWT must contain non-empty header and payload segments.");
+          headerOutput.value = parseJwtPart(header);
+          payloadOutput.value = parseJwtPart(payload);
+          setStatus("Decoded");
+        } catch (error) {
+          headerOutput.value = "";
+          payloadOutput.value = error instanceof Error ? error.message : "Could not decode token";
+          setStatus("Invalid JWT", false);
+        }
+      }
+    });
+  })();
+</script>

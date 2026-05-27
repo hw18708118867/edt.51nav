@@ -1,0 +1,97 @@
+---
+import ToolCard from "@/components/ToolCard.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { categories, getCategory, tools } from "@/data/site-content";
+import { buildWebsiteJsonLd } from "@/lib/json-ld";
+import { buildSeo } from "@/lib/seo";
+
+export const getStaticPaths = () =>
+  categories.map((category) => ({
+    params: { category: category.slug },
+    props: { category }
+  }));
+
+const { category } = Astro.props;
+const categoryInfo = getCategory(category.slug);
+const categoryTools = tools.filter((tool) => tool.category === category.slug);
+
+const seo = buildSeo({
+  title: categoryInfo?.name ?? "Tool Category",
+  description: categoryInfo?.description ?? "Browse tools by category.",
+  path: `/${category.slug}/`,
+  keywords: [category.slug, "developer tools", `${category.slug} tools`]
+});
+---
+
+<BaseLayout seo={seo} jsonLd={[buildWebsiteJsonLd()]}>
+  <section class="shell relative overflow-hidden pt-14 pb-20 lg:pt-18 lg:pb-24">
+    <div class="aurora-layer"></div>
+    <div class="hero-trails"></div>
+    <div class="pointer-events-none absolute inset-x-0 top-14 -z-10 mx-auto h-72 max-w-5xl rounded-full bg-gradient-to-r from-sky-200/20 via-white/80 to-slate-200/20 blur-3xl"></div>
+    <div class="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+      <div class="max-w-3xl">
+        <div class="eyebrow">{categoryInfo?.eyebrow ?? "Category"}</div>
+        <h1 class="headline mt-6 text-5xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-6xl">{categoryInfo?.name}</h1>
+        <p class="mt-5 text-lg leading-9 text-slate-600">
+          {categoryInfo?.description}
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3 text-sm text-slate-500">
+          <span class="status-pill border-slate-200 bg-white/70 text-slate-600">{categoryTools.length} tool(s)</span>
+          <span class="status-pill border-slate-200 bg-white/70 text-slate-600">Fast browser tools</span>
+          <span class="status-pill border-slate-200 bg-white/70 text-slate-600">Direct links</span>
+        </div>
+      </div>
+      <div class="hero-monitor relative overflow-hidden rounded-[2rem] p-5 sm:p-6">
+        <div class="grid-lines absolute inset-0"></div>
+        <div class="noise-layer"></div>
+        <div class="relative">
+          <div class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Category focus</div>
+          <div class="mt-4 grid gap-3">
+            <div class="rounded-2xl border border-slate-200 bg-white/88 p-4">
+              <div class="text-sm font-semibold text-slate-950">Fast task entry</div>
+              <p class="mt-1 text-sm leading-7 text-slate-600">Open the exact tool you came for without clicking through extra pages.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white/88 p-4">
+              <div class="text-sm font-semibold text-slate-950">Consistent workbench</div>
+              <p class="mt-1 text-sm leading-7 text-slate-600">Input, output, related links, and FAQs stay in familiar places.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white/88 p-4">
+              <div class="text-sm font-semibold text-slate-950">Scalable structure</div>
+              <p class="mt-1 text-sm leading-7 text-slate-600">More tools can be added here later without changing the whole navigation model.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell pb-20 lg:pb-24">
+    <div class="surface flex flex-col gap-6 rounded-[2rem] px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Category Notes</div>
+        <p class="mt-2 text-sm leading-7 text-slate-600">
+          This page is a focused list of related tools, not a giant catch-all directory.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3 text-sm font-semibold text-slate-500">
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2">Tool discovery</span>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2">Reusable metadata</span>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2">Long-tail SEO</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell pb-24">
+    <div class="flex items-end justify-between gap-6">
+      <div>
+        <div class="eyebrow">Category Tools</div>
+        <h2 class="headline mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+          {categoryInfo?.name}
+        </h2>
+      </div>
+    </div>
+    <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {categoryTools.length ? categoryTools.map((tool) => <ToolCard tool={tool} />) : <div class="section-card">More tools are planned for this category.</div>}
+    </div>
+  </section>
+</BaseLayout>

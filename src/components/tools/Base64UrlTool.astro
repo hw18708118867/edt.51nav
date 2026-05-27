@@ -1,0 +1,100 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="Base64URL Encode / Decode"
+  description="Encode text to Base64URL or decode URL-safe Base64 back into readable UTF-8 text for JWT, callbacks, and transport-safe payloads."
+  controls={["Encode", "Decode", "Clear", "Sample"]}
+  note="Base64URL replaces + and / with URL-safe characters and usually omits trailing padding."
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Input</span>
+        <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-tool-input data-code-language="text" placeholder="Paste plain text or Base64URL here"></textarea>
+    </label>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Output</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">JWT-friendly</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="text" readonly placeholder="Result will appear here"></textarea>
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+        Base64URL is commonly used in JWT segments and signed URL flows where +, /, and = are inconvenient.
+      </div>
+    </label>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const sample = '{"alg":"HS256","typ":"JWT"}';
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    const encodeUtf8 = (value) => {
+      const bytes = new TextEncoder().encode(value);
+      let binary = "";
+      bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+      });
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    };
+
+    const decodeUtf8 = (value) => {
+      const compact = value.replace(/\s+/g, "");
+      if (!compact) return "";
+      if (/[^A-Za-z0-9\-_]/.test(compact) || compact.length % 4 === 1) {
+        throw new Error("Base64URL input contains invalid characters or padding.");
+      }
+      const normalized = compact.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized + "=".repeat((4 - (normalized.length % 4 || 4)) % 4);
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    };
+
+    root.addEventListener("click", (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sample;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Encode") {
+        try {
+          output.value = encodeUtf8(input.value);
+          setStatus("Encoded");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Encoding failed";
+          setStatus("Encode failed", false);
+        }
+      } else if (action === "Decode") {
+        try {
+          output.value = decodeUtf8(input.value);
+          setStatus("Decoded");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Decoding failed";
+          setStatus("Decode failed", false);
+        }
+      }
+    });
+  })();
+</script>

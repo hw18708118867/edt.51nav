@@ -1,0 +1,156 @@
+---
+import { categories, tools, type ToolMeta } from "@/data/site-content";
+import { getToolPath } from "@/lib/tool-links";
+
+interface Props {
+  tool: ToolMeta;
+}
+
+const { tool } = Astro.props;
+
+const siblingTools = tools.filter((item) => item.category === tool.category);
+const groupedTools = categories.map((category) => ({
+  ...category,
+  tools: tools.filter((item) => item.category === category.slug)
+}));
+---
+
+<section class="surface rounded-[1.9rem] p-4 sm:p-5" data-switcher-root>
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Quick Switch</div>
+      <h2 class="headline mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">
+        Tool navigation
+      </h2>
+    </div>
+    <a href="/tools/" class="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-950">
+      All tools
+    </a>
+  </div>
+
+  <div class="mt-5 rounded-[1.5rem] border border-slate-200 bg-white/78 p-4">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Current category</div>
+        <div class="mt-1 text-sm font-semibold text-slate-950">{tool.category.toUpperCase()}</div>
+      </div>
+      <a href={`/${tool.category}/`} class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 hover:text-slate-950">Category</a>
+    </div>
+    <div class="mt-4 flex flex-col gap-2">
+      {
+        siblingTools.map((item) => {
+          const active = item.id === tool.id;
+          return (
+            <a
+              href={getToolPath(item.category, item.slug)}
+              class:list={[
+                "tool-chip rounded-2xl border px-4 py-3 text-sm font-semibold transition",
+                active
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950"
+              ]}
+            >
+              {item.title}
+            </a>
+          );
+        })
+      }
+    </div>
+  </div>
+
+  <div class="mt-5 rounded-[1.5rem] border border-slate-200 bg-white/78 p-4">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Cross-category switch</div>
+        <div class="mt-1 text-sm font-semibold text-slate-950">Other categories</div>
+      </div>
+      <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{tools.length} tools</span>
+    </div>
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      {
+        groupedTools.map((group) => {
+          const active = group.slug === tool.category;
+          return (
+            <button
+              type="button"
+              class:list={[
+                "tool-switch-tab rounded-full border px-4 py-2 text-sm font-semibold transition",
+                active
+                  ? "border-slate-950 bg-slate-950 text-white"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950"
+              ]}
+              data-switch-category={group.slug}
+            >
+              {group.name}
+            </button>
+          );
+        })
+      }
+    </div>
+
+    <div class="mt-4">
+      {
+        groupedTools.map((group) => {
+          const active = group.slug === tool.category;
+          return (
+            <div class:list={["tool-switch-panel", !active && "hidden"]} data-switch-panel={group.slug}>
+              <div class="flex flex-col gap-2">
+                {
+                  group.tools.map((item) => {
+                    const current = item.id === tool.id;
+                    return (
+                      <a
+                        href={getToolPath(item.category, item.slug)}
+                        class:list={[
+                          "tool-chip rounded-2xl border px-4 py-3 text-sm font-semibold transition",
+                          current
+                            ? "border-sky-200 bg-sky-50 text-sky-700"
+                            : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white hover:text-slate-950"
+                        ]}
+                      >
+                        {item.title}
+                      </a>
+                    );
+                  })
+                }
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+
+    const tabs = Array.from(root.querySelectorAll("[data-switch-category]"));
+    const panels = Array.from(root.querySelectorAll("[data-switch-panel]"));
+
+    const activate = (category) => {
+      tabs.forEach((tab) => {
+        if (!(tab instanceof HTMLButtonElement)) return;
+        const active = tab.dataset.switchCategory === category;
+        tab.className = active
+          ? "tool-switch-tab rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition"
+          : "tool-switch-tab rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950";
+      });
+
+      panels.forEach((panel) => {
+        if (!(panel instanceof HTMLElement)) return;
+        panel.classList.toggle("hidden", panel.dataset.switchPanel !== category);
+      });
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        if (!(tab instanceof HTMLButtonElement)) return;
+        activate(tab.dataset.switchCategory || "");
+      });
+    });
+  })();
+</script>

@@ -1,0 +1,77 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="URL Encode / Decode"
+  description="Encode query values and URL fragments safely, or decode percent-encoded text back into readable form."
+  controls={["Encode", "Decode", "Clear", "Sample"]}
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Input</span>
+        <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-tool-input data-code-language="url" placeholder="Paste text or an encoded URL segment here"></textarea>
+    </label>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Output</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Percent encoding</span>
+      </div>
+      <textarea class="tool-textarea min-h-[24rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="url" readonly placeholder="Result will appear here"></textarea>
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+        Encode parameter values, not the whole request syntax, to avoid double encoding.
+      </div>
+    </label>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(status instanceof HTMLElement)) return;
+
+    const sample = "https://devtools.51nav.com/json/formatter/?q=hello world&lang=en-US";
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    root.addEventListener("click", (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sample;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Encode") {
+        try {
+          output.value = encodeURIComponent(input.value);
+          setStatus("Encoded");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Encoding failed";
+          setStatus("Encode failed", false);
+        }
+      } else if (action === "Decode") {
+        try {
+          output.value = decodeURIComponent(input.value);
+          setStatus("Decoded");
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Decoding failed";
+          setStatus("Decode failed", false);
+        }
+      }
+    });
+  })();
+</script>

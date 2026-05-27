@@ -1,0 +1,60 @@
+---
+import Analytics from "@/components/Analytics.astro";
+import HeadMeta from "@/components/HeadMeta.astro";
+import JsonLd from "@/components/JsonLd.astro";
+import SiteFooter from "@/components/SiteFooter.astro";
+import SiteHeader from "@/components/SiteHeader.astro";
+import { siteConfig } from "@/config/site";
+import "@/styles/global.css";
+
+interface Props {
+  seo: {
+    title: string;
+    description: string;
+    canonical: string;
+    keywords?: string[];
+    type?: "website" | "article";
+    image?: string;
+  };
+  jsonLd?: unknown[];
+}
+
+const { seo, jsonLd = [] } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <script is:inline>
+      {`
+        (() => {
+          const savedTheme = window.localStorage.getItem('edt-theme');
+          const theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark';
+          document.documentElement.dataset.theme = theme;
+        })();
+      `}
+    </script>
+    <HeadMeta {...seo} />
+    {
+      import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION && (
+        <meta
+          name="google-site-verification"
+          content={import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION}
+        />
+      )
+    }
+    <meta name="application-name" content={siteConfig.name} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    {jsonLd.map((item) => <JsonLd data={item} />)}
+    <Analytics />
+  </head>
+  <body>
+    <SiteHeader />
+    <main>
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

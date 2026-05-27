@@ -1,0 +1,45 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { buildWebsiteJsonLd } from "@/lib/json-ld";
+import { buildSeo } from "@/lib/seo";
+
+const seo = buildSeo({
+  title: "Privacy",
+  description:
+    "Privacy information for Everyday Dev Tools, including local processing, analytics, and future ads.",
+  path: "/privacy/",
+  keywords: ["privacy policy developer tools", "everyday dev tools privacy", "developer tools privacy"]
+});
+---
+
+<BaseLayout seo={seo} jsonLd={[buildWebsiteJsonLd()]}>
+  <section class="shell py-14 pb-24 lg:py-18">
+    <div class="max-w-4xl">
+      <div class="eyebrow">Privacy</div>
+      <h1 class="headline mt-6 text-5xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-6xl">Most tools here run locally in your browser.</h1>
+      <p class="mt-6 text-lg leading-9 text-slate-600">
+        For most pages, the text you paste never leaves the tab. There is no custom backend handling JSON, tokens, regex input, or encoded text.
+      </p>
+    </div>
+    <div class="mt-10 space-y-6">
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Local processing</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          JSON formatting, validation, comparison, encoding, regex testing, and JWT decoding all run client-side unless a tool clearly says it needs a network request.
+        </p>
+      </section>
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Analytics and search tooling</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          Basic analytics or search verification may be enabled to understand site performance and search visibility. If that happens, data handling follows those third-party services rather than a custom tracking system here.
+        </p>
+      </section>
+      <section class="section-card">
+        <h2 class="headline text-2xl font-semibold tracking-[-0.03em] text-slate-950">Advertising</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-600">
+          If advertising appears on the site, it should stay restrained and out of the main task flow. This page will reflect the final setup if ads are enabled.
+        </p>
+      </section>
+    </div>
+  </section>
+</BaseLayout>

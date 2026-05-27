@@ -1,0 +1,177 @@
+---
+import ToolShell from "@/components/tool/ToolShell.astro";
+---
+
+<ToolShell
+  title="Hash Generator"
+  description="Generate MD5, SHA-1, SHA-256, or SHA-512 hashes for text, fixtures, payloads, and quick integrity checks."
+  controls={["Generate", "Clear", "Sample"]}
+  note="Hashing is one-way. Use it for checksums and signatures, not for reversible storage."
+>
+  <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+    <div class="space-y-5">
+      <label class="block">
+        <div class="mb-3 flex items-center justify-between gap-4">
+          <span class="text-sm font-semibold text-slate-900">Input</span>
+          <span class="status-pill border-slate-200 bg-slate-50 text-slate-500" data-tool-status>Ready</span>
+        </div>
+        <textarea class="tool-textarea min-h-[22rem] rounded-[1.5rem] bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:ring-sky-100" data-tool-input data-code-language="text" placeholder="Paste text to hash"></textarea>
+      </label>
+      <label class="block">
+        <div class="mb-3 text-sm font-semibold text-slate-900">Algorithm</div>
+        <select class="tool-input rounded-[1.5rem] bg-white" data-algorithm>
+          <option value="MD5">MD5</option>
+          <option value="SHA-1">SHA-1</option>
+          <option value="SHA-256" selected>SHA-256</option>
+          <option value="SHA-512">SHA-512</option>
+        </select>
+      </label>
+    </div>
+    <label class="block">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <span class="text-sm font-semibold text-slate-900">Output</span>
+        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Digest</span>
+      </div>
+      <textarea class="tool-textarea min-h-[30rem] rounded-[1.5rem] bg-white" data-tool-output data-code-language="text" readonly placeholder="Hash output will appear here"></textarea>
+      <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+        Use SHA-256 or SHA-512 by default. MD5 and SHA-1 are mainly for compatibility and legacy checksum workflows.
+      </div>
+    </label>
+  </div>
+</ToolShell>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript?.previousElementSibling;
+    if (!(root instanceof HTMLElement)) return;
+    const input = root.querySelector("[data-tool-input]");
+    const output = root.querySelector("[data-tool-output]");
+    const algorithm = root.querySelector("[data-algorithm]");
+    const status = root.querySelector("[data-tool-status]");
+    if (!(input instanceof HTMLTextAreaElement) || !(output instanceof HTMLTextAreaElement) || !(algorithm instanceof HTMLSelectElement) || !(status instanceof HTMLElement)) return;
+
+    const sample = "Everyday Dev Tools";
+
+    const setStatus = (text, ok = true) => {
+      status.textContent = text;
+      status.className = `status-pill ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`;
+    };
+
+    const toHex = (buffer) =>
+      Array.from(new Uint8Array(buffer))
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+
+    const leftRotate = (value, amount) => ((value << amount) | (value >>> (32 - amount))) >>> 0;
+
+    const md5 = (value) => {
+      const bytes = Array.from(new TextEncoder().encode(value));
+      const bitLength = BigInt(bytes.length) * 8n;
+      bytes.push(0x80);
+      while ((bytes.length % 64) !== 56) bytes.push(0);
+      for (let index = 0; index < 8; index += 1) {
+        bytes.push(Number((bitLength >> BigInt(8 * index)) & 0xffn));
+      }
+
+      let a0 = 0x67452301;
+      let b0 = 0xefcdab89;
+      let c0 = 0x98badcfe;
+      let d0 = 0x10325476;
+
+      const shifts = [
+        7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+        5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+        4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+        6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+      ];
+
+      const table = Array.from({ length: 64 }, (_, index) =>
+        Math.floor(Math.abs(Math.sin(index + 1)) * 0x100000000) >>> 0
+      );
+
+      for (let offset = 0; offset < bytes.length; offset += 64) {
+        const words = [];
+        for (let index = 0; index < 64; index += 4) {
+          words.push(
+            (bytes[offset + index] |
+              (bytes[offset + index + 1] << 8) |
+              (bytes[offset + index + 2] << 16) |
+              (bytes[offset + index + 3] << 24)) >>> 0
+          );
+        }
+
+        let a = a0;
+        let b = b0;
+        let c = c0;
+        let d = d0;
+
+        for (let index = 0; index < 64; index += 1) {
+          let f;
+          let g;
+
+          if (index < 16) {
+            f = (b & c) | (~b & d);
+            g = index;
+          } else if (index < 32) {
+            f = (d & b) | (~d & c);
+            g = (5 * index + 1) % 16;
+          } else if (index < 48) {
+            f = b ^ c ^ d;
+            g = (3 * index + 5) % 16;
+          } else {
+            f = c ^ (b | ~d);
+            g = (7 * index) % 16;
+          }
+
+          const temp = d;
+          d = c;
+          c = b;
+          b = (b + leftRotate((a + f + table[index] + words[g]) >>> 0, shifts[index])) >>> 0;
+          a = temp;
+        }
+
+        a0 = (a0 + a) >>> 0;
+        b0 = (b0 + b) >>> 0;
+        c0 = (c0 + c) >>> 0;
+        d0 = (d0 + d) >>> 0;
+      }
+
+      const digest = [a0, b0, c0, d0].flatMap((word) => [
+        word & 0xff,
+        (word >>> 8) & 0xff,
+        (word >>> 16) & 0xff,
+        (word >>> 24) & 0xff
+      ]);
+
+      return digest.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    };
+
+    const hashText = async (value, selectedAlgorithm) => {
+      if (selectedAlgorithm === "MD5") return md5(value);
+      const buffer = await crypto.subtle.digest(selectedAlgorithm, new TextEncoder().encode(value));
+      return toHex(buffer);
+    };
+
+    root.addEventListener("click", async (event) => {
+      const action = event.target instanceof Element ? event.target.closest("[data-tool-action]")?.getAttribute("data-tool-action") : null;
+      if (!action) return;
+      if (action === "Sample") {
+        input.value = sample;
+        output.value = "";
+        setStatus("Sample loaded");
+      } else if (action === "Clear") {
+        input.value = "";
+        output.value = "";
+        setStatus("Ready");
+      } else if (action === "Generate") {
+        try {
+          output.value = await hashText(input.value, algorithm.value);
+          setStatus(`${algorithm.value} ready`);
+        } catch (error) {
+          output.value = error instanceof Error ? error.message : "Hashing failed";
+          setStatus("Hash failed", false);
+        }
+      }
+    });
+  })();
+</script>

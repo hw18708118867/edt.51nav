@@ -1,0 +1,29 @@
+---
+const measurementId = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
+const adsenseClientId = import.meta.env.PUBLIC_ENABLE_ADSENSE === "true" ? import.meta.env.PUBLIC_ADSENSE_CLIENT_ID : undefined;
+---
+
+{
+  (measurementId || adsenseClientId) && (
+    <>
+      {
+        measurementId && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}></script>
+            <script is:inline>
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${measurementId}');
+              `}
+            </script>
+          </>
+        )
+      }
+      {
+        adsenseClientId && <script async crossorigin="anonymous" src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}></script>
+      }
+    </>
+  )
+}

@@ -1,0 +1,17 @@
+---
+import ToolRenderer from "@/components/ToolRenderer.astro";
+import ToolLayout from "@/layouts/ToolLayout.astro";
+import { tools } from "@/data/site-content";
+
+export const getStaticPaths = () =>
+  tools.map((tool) => ({
+    params: { category: tool.category, tool: tool.slug },
+    props: { tool }
+  }));
+
+const { tool } = Astro.props;
+---
+
+<ToolLayout tool={tool}>
+  <ToolRenderer toolId={tool.id} />
+</ToolLayout>
