@@ -73,18 +73,24 @@ Match 3: CDN`,
         Start with the tools people reach for most: cleanup a payload, inspect a token, sign a message, test a regex, or check an endpoint.
       </p>
       <div class="mt-6 flex flex-wrap gap-2">
-        <a href={previewPanels[0].href} class="btn-primary" data-preview-link>Open JSON Formatter</a>
+        <a
+          href={previewPanels[0].href}
+          class="btn-primary inline-flex min-h-[2.75rem] min-w-[15.5rem] items-center justify-center text-center"
+          data-preview-link
+        >
+          Open JSON Formatter
+        </a>
         <a href="/tools/" class="btn-secondary">Browse All Tools</a>
       </div>
     </div>
     <div class="rounded-[1.4rem] border border-slate-200 bg-white/80 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-        <div>
+        <div class="min-h-[1.5rem]">
           <div class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live preview</div>
-          <div class="mt-1 min-h-[1.25rem] text-sm font-semibold text-slate-950" data-preview-title>{previewPanels[0].title}</div>
+          <div class="mt-1 text-sm font-semibold text-slate-950 transition-opacity duration-200" data-preview-title>{previewPanels[0].title}</div>
         </div>
         <span class:list={[
-          "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+          "rounded-full px-2.5 py-1 text-[11px] font-semibold transition-opacity duration-200",
           previewPanels[0].statusTone
         ]} data-preview-status>{previewPanels[0].status}</span>
       </div>
@@ -101,16 +107,16 @@ Match 3: CDN`,
           ))
         }
       </div>
-      <div class="mt-4 min-h-[15.5rem] rounded-[1.15rem] border border-slate-200 bg-slate-950 p-4 font-mono text-[11px] leading-6 text-slate-100 transition duration-200" data-preview-shell>
+      <div class="mt-4 h-[17rem] overflow-hidden rounded-[1.15rem] border border-slate-200 bg-slate-950 p-4 font-mono text-[11px] leading-6 text-slate-100 transition duration-200" data-preview-shell>
         <div class="text-slate-400">Input</div>
-        <div class="mt-2 min-h-[3.5rem] whitespace-pre-wrap" data-preview-input>{previewPanels[0].input}</div>
+        <div class="mt-2 h-[4.5rem] overflow-hidden whitespace-pre-wrap transition-opacity duration-200" data-preview-input>{previewPanels[0].input}</div>
         <div class="mt-4 text-slate-400">Output</div>
-        <div class="mt-2 min-h-[5.5rem] whitespace-pre-wrap text-sky-300" data-preview-output>{previewPanels[0].output}</div>
+        <div class="mt-2 h-[7.25rem] overflow-hidden whitespace-pre-wrap text-sky-300 transition-opacity duration-200" data-preview-output>{previewPanels[0].output}</div>
       </div>
       <div class="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
         <div>
           <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</div>
-          <div class="mt-1 min-h-[2.75rem] text-sm font-semibold text-slate-950" data-preview-footer>{previewPanels[0].footer}</div>
+          <div class="mt-1 h-[3.75rem] overflow-hidden text-sm font-semibold text-slate-950 transition-opacity duration-200" data-preview-footer>{previewPanels[0].footer}</div>
         </div>
         <div class="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_8px_rgba(16,185,129,0.12)]"></div>
       </div>
@@ -176,17 +182,31 @@ Match 3: CDN`,
     let activeIndex = 0;
     let timer = 0;
 
+    const fadeSwap = (element, nextValue) => {
+      if (!(element instanceof HTMLElement)) return;
+      element.animate(
+        [
+          { opacity: 1, transform: "translateY(0px)" },
+          { opacity: 0, transform: "translateY(2px)" },
+          { opacity: 0, transform: "translateY(-2px)" },
+          { opacity: 1, transform: "translateY(0px)" }
+        ],
+        { duration: 220, easing: "ease-out" }
+      );
+      element.textContent = nextValue;
+    };
+
     const render = (index) => {
       activeIndex = index;
       const panel = panels[index];
-      title.textContent = panel.title;
+      fadeSwap(title, panel.title);
       link.href = panel.href;
       link.textContent = `Open ${panel.title}`;
-      status.textContent = panel.status;
+      fadeSwap(status, panel.status);
       status.className = `rounded-full px-2.5 py-1 text-[11px] font-semibold ${panel.statusTone}`;
-      input.textContent = panel.input;
-      output.textContent = panel.output;
-      footer.textContent = panel.footer;
+      fadeSwap(input, panel.input);
+      fadeSwap(output, panel.output);
+      fadeSwap(footer, panel.footer);
       shell.animate(
         [
           { opacity: 0.78 },
