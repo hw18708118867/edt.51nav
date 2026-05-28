@@ -1,5 +1,6 @@
 ---
 import { primaryNav } from "@/config/site";
+import ToolGlyph from "@/components/ToolGlyph.astro";
 import ThemeToggle from "@/components/ThemeToggle.astro";
 import { tools } from "@/data/site-content";
 import { getToolPath } from "@/lib/tool-links";
@@ -19,7 +20,9 @@ const navItems = primaryNav.map((item) => {
           .filter((tool) => tool.category === categorySlug)
           .map((tool) => ({
             href: getToolPath(tool.category, tool.slug),
-            label: tool.title
+            label: tool.title,
+            toolId: tool.id,
+            category: tool.category
           }))
       : []
   };
@@ -85,7 +88,10 @@ const navItems = primaryNav.map((item) => {
                                 : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                             ]}
                           >
-                            {child.label}
+                            <span class="flex items-center gap-3">
+                              <ToolGlyph toolId={child.toolId} category={child.category} size="xs" />
+                              <span>{child.label}</span>
+                            </span>
                           </a>
                         );
                       })
@@ -153,7 +159,10 @@ const navItems = primaryNav.map((item) => {
                               : "text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                           ]}
                         >
-                          {child.label}
+                          <span class="flex items-center gap-3">
+                            <ToolGlyph toolId={child.toolId} category={child.category} size="xs" />
+                            <span>{child.label}</span>
+                          </span>
                         </a>
                       );
                     })

@@ -31,7 +31,9 @@ const relatedTools = tool.relatedToolIds
   .map((item) => ({
     href: getToolPath(item!.category, item!.slug),
     label: item!.title,
-    description: item!.description
+    description: item!.description,
+    toolId: item!.id,
+    category: item!.category
   }));
 
 const relatedArticles = tool.relatedArticleSlugs
