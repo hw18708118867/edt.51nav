@@ -1,6 +1,14 @@
 ---
 const measurementId = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
 const adsenseClientId = import.meta.env.PUBLIC_ENABLE_ADSENSE === "true" ? import.meta.env.PUBLIC_ADSENSE_CLIENT_ID : undefined;
+const analyticsBootstrap = measurementId
+  ? [
+      "window.dataLayer = window.dataLayer || [];",
+      "function gtag(){dataLayer.push(arguments);}",
+      "gtag('js', new Date());",
+      `gtag('config', ${JSON.stringify(measurementId)});`
+    ].join("\n")
+  : "";
 ---
 
 {
@@ -10,14 +18,7 @@ const adsenseClientId = import.meta.env.PUBLIC_ENABLE_ADSENSE === "true" ? impor
         measurementId && (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}></script>
-            <script is:inline>
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${measurementId}');
-              `}
-            </script>
+            <script is:inline set:html={analyticsBootstrap}></script>
           </>
         )
       }
